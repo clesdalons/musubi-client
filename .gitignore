@@ -1,0 +1,43 @@
+# --- Binaries and Executables ---
+build/bin/
+frontend/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# --- Go Dependencies ---
+# These are managed by go.mod and go.sum
+vendor/
+# Optional: keep go.sum but ignore go.work if you use workspaces
+go.work
+
+# --- Frontend Dependencies ---
+node_modules/
+.pnp
+.pnp.js
+
+# --- Frontend Logs ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+
+# --- Wails Specifics ---
+# These folders are auto-generated during 'wails dev' or 'wails build'
+wailsjs/
+frontend/wailsjs/
+
+# --- IDEs and Editor Configs ---
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# --- OS Specific Files ---
+.DS_Store
+Thumbs.db
