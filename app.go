@@ -6,7 +6,6 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-// AppInfo holds application metadata for the frontend
 type AppInfo struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
@@ -25,40 +24,44 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
-// GetAppInfo returns centralized metadata to maintain DRY principle
 func (a *App) GetAppInfo() AppInfo {
-	return AppInfo{
-		Name:    "Musubi",
-		Version: "0.1.0",
+	return AppInfo{Name: "Musubi", Version: "0.1.0"}
+}
+
+func (a *App) GetSettings() Config {
+	return a.LoadConfig()
+}
+
+func (a *App) SaveSettings(path, uploader, campaign string) {
+	oldPath := a.LoadConfig().SavePath
+	_ = a.WriteConfig(path, uploader, campaign)
+
+	// Restart watcher if the folder path has changed
+	if oldPath != path && path != "" {
+		a.StartWatcher()
 	}
 }
 
-// GetInitialPath returns the prioritized save directory (Saved Config > Auto-detect)
 func (a *App) GetInitialPath() string {
-	if saved := a.LoadConfig(); saved != "" {
-		return saved
+	cfg := a.LoadConfig()
+	if cfg.SavePath != "" {
+		return cfg.SavePath
 	}
-
 	if auto := a.detectDefaultPath(); auto != "" {
-		_ = a.SaveConfig(auto)
+		_ = a.WriteConfig(auto, cfg.Uploader, cfg.Campaign)
 		return auto
 	}
-
 	return ""
 }
 
-// SelectFolder opens a native OS dialog and restarts the monitoring service if successful
 func (a *App) SelectFolder() string {
 	folder, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
 		Title: "Select DOS2 Story Save Directory",
 	})
-
 	if err != nil || folder == "" {
 		return ""
 	}
-
-	_ = a.SaveConfig(folder)
-	a.StartWatcher()
-
+	cfg := a.LoadConfig()
+	a.SaveSettings(folder, cfg.Uploader, cfg.Campaign)
 	return folder
 }

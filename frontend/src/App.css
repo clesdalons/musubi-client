@@ -139,3 +139,82 @@
   font-size: 0.65rem;
   color: #444;
 }
+
+/* --- App.css (Additions & Updates) --- */
+
+/* Input Group Container */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+/* Label styling for inputs */
+.label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+/* Modern Input Field */
+.input-field {
+  background-color: #0a0a0c;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 10px;
+  color: var(--text-main);
+  font-size: 0.85rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+.input-field:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(97, 218, 251, 0.1);
+}
+
+.input-field::placeholder {
+  color: #444;
+}
+
+/* Path box adjustments to align with new fields */
+.path-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+/* Responsive fix for mini buttons in cards */
+.btn-mini {
+  background-color: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: bold;
+  cursor: pointer;
+  align-self: flex-end; /* Align to the right of the path box */
+  transition: all 0.2s;
+}
+
+.btn-mini:hover {
+  background-color: var(--accent);
+  color: #000;
+}
+
+/* Optional: status text highlight */
+.file-name {
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: var(--accent-success);
+  font-family: 'Consolas', monospace;
+  background: rgba(0, 255, 170, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}

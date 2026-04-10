@@ -1,9 +1,23 @@
+import { useState, useEffect } from 'react';
 import { useWatcher } from './hooks/useWatcher';
-import { SelectFolder } from "../wailsjs/go/main/App";
+import { SelectFolder, GetSettings, SaveSettings } from "../wailsjs/go/main/App";
 import './App.css';
 
 const App = () => {
     const { path, setPath, lastSave, status, setStatus, info } = useWatcher();
+    const [uploader, setUploader] = useState("");
+    const [campaign, setCampaign] = useState("");
+
+    useEffect(() => {
+        GetSettings().then(cfg => {
+            setUploader(cfg.uploader || "");
+            setCampaign(cfg.campaign || "");
+        });
+    }, []);
+
+    const handleSyncSettings = () => {
+        SaveSettings(path, uploader, campaign);
+    };
 
     const handleBrowse = async () => {
         const selected = await SelectFolder();
@@ -22,25 +36,43 @@ const App = () => {
 
             <main className="main">
                 <section className="card">
-                    <h3 className="card-title">Save Directory</h3>
-                    {path ? (
-                        <div className="path-box">
-                            <code className="code-block">{path}</code>
-                            <button onClick={handleBrowse} className="btn-mini">Change Path</button>
-                        </div>
-                    ) : (
-                        <div style={{ textAlign: 'center' }}>
-                            <button onClick={handleBrowse} className="btn-primary">
-                                Browse Folder
-                            </button>
-                        </div>
-                    )}
+                    <h3 className="card-title">Configuration</h3>
+                    <div className="input-group">
+                        <label className="label">Uploader Name</label>
+                        <input 
+                            className="input-field"
+                            value={uploader}
+                            onChange={(e) => setUploader(e.target.value)}
+                            onBlur={handleSyncSettings}
+                            placeholder="e.g. Incurso"
+                        />
+                    </div>
+                    <div className="input-group" style={{ marginTop: '12px' }}>
+                        <label className="label">Campaign ID</label>
+                        <input 
+                            className="input-field"
+                            value={campaign}
+                            onChange={(e) => setCampaign(e.target.value)}
+                            onBlur={handleSyncSettings}
+                            placeholder="e.g. testcampaign"
+                        />
+                    </div>
                 </section>
 
                 <section className="card">
-                    <h3 className="card-title">Live Monitoring</h3>
+                    <h3 className="card-title">Save Directory</h3>
+                    <div className="path-box">
+                        <code className="code-block">{path || "No folder selected"}</code>
+                        <button onClick={handleBrowse} className="btn-mini">
+                            {path ? "Change" : "Browse"}
+                        </button>
+                    </div>
+                </section>
+
+                <section className="card">
+                    <h3 className="card-title">Status</h3>
                     <div className="save-display">
-                        <span className="label">Latest sync-ready file:</span>
+                        <span className="label">Latest synced:</span>
                         <span className="file-name">{lastSave}</span>
                     </div>
                 </section>
