@@ -1,35 +1,56 @@
-import { useState, useEffect } from 'react';
-import { GetSavePath } from "../wailsjs/go/main/App"; // L'import magique
+import { useWatcher } from './hooks/useWatcher';
+import { SelectFolder } from "../wailsjs/go/main/App";
 import './App.css';
 
-function App() {
-    const [path, setPath] = useState("Recherche...");
+const App = () => {
+    const { path, setPath, lastSave, status, setStatus, info } = useWatcher();
 
-    useEffect(() => {
-        // On appelle la fonction Go au démarrage
-        GetSavePath().then((result) => {
-            setPath(result);
-        });
-    }, []);
+    const handleBrowse = async () => {
+        const selected = await SelectFolder();
+        if (selected) {
+            setPath(selected);
+            setStatus("Watching");
+        }
+    };
 
     return (
-        <div id="App">
-            <header style={{ padding: '20px', textAlign: 'center' }}>
-                <h1 style={{ color: '#61dafb' }}>Musubi</h1>
+        <div className="container">
+            <header className="header">
+                <h1 className="title">{info.name}</h1>
+                <div className="badge">{status}</div>
             </header>
-            <main style={{ padding: '0 20px' }}>
-                <div className="card">
-                    <p>Dossier détecté :</p>
-                    <code style={{ fontSize: '0.8em', wordBreak: 'break-all' }}>
-                        {path}
-                    </code>
-                </div>
-                <button style={{ marginTop: '20px' }}>
-                    Synchroniser
-                </button>
+
+            <main className="main">
+                <section className="card">
+                    <h3 className="card-title">Save Directory</h3>
+                    {path ? (
+                        <div className="path-box">
+                            <code className="code-block">{path}</code>
+                            <button onClick={handleBrowse} className="btn-mini">Change Path</button>
+                        </div>
+                    ) : (
+                        <div style={{ textAlign: 'center' }}>
+                            <button onClick={handleBrowse} className="btn-primary">
+                                Browse Folder
+                            </button>
+                        </div>
+                    )}
+                </section>
+
+                <section className="card">
+                    <h3 className="card-title">Live Monitoring</h3>
+                    <div className="save-display">
+                        <span className="label">Latest sync-ready file:</span>
+                        <span className="file-name">{lastSave}</span>
+                    </div>
+                </section>
             </main>
+
+            <footer className="footer">
+                <p>Musubi Client • v{info.version}</p>
+            </footer>
         </div>
     );
-}
+};
 
 export default App;
