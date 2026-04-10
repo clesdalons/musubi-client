@@ -12,6 +12,7 @@ import (
 
 type Watcher struct {
 	fsWatcher *fsnotify.Watcher
+	IsLocked  bool
 }
 
 func (a *App) StartWatcher() {
@@ -43,6 +44,11 @@ func (a *App) listenToEvents() {
 		case event, ok := <-a.watcher.fsWatcher.Events:
 			if !ok {
 				return
+			}
+
+			// Prevent upload while writing the downloaded file from musubi-api
+			if a.watcher.IsLocked {
+				continue
 			}
 
 			if event.Op&fsnotify.Create == fsnotify.Create {

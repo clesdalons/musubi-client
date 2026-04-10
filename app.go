@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"log"
+	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -64,4 +66,31 @@ func (a *App) SelectFolder() string {
 	cfg := a.LoadConfig()
 	a.SaveSettings(folder, cfg.Uploader, cfg.Campaign)
 	return folder
+}
+
+func (a *App) DownloadLatestSave() string {
+	// 1. Lock the watcher
+	if a.watcher != nil {
+		a.watcher.IsLocked = true
+		log.Println("[Manager] Watcher locked for download")
+	}
+
+	// 2. Perform download
+	err := a.DownloadAndExtract()
+
+	// 3. Unlock with a small safety buffer
+	go func() {
+		time.Sleep(3 * time.Second)
+		if a.watcher != nil {
+			a.watcher.IsLocked = false
+			log.Println("[Manager] Watcher unlocked")
+		}
+	}()
+
+	if err != nil {
+		log.Printf("[Manager] Download failed: %v", err)
+		return "Error: " + err.Error()
+	}
+
+	return "Success"
 }
