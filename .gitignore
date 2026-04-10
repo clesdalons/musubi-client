@@ -1,5 +1,8 @@
 # --- Binaries and Executables ---
 build/bin/
+/build/windows/
+/build/darwin/
+/build/linux/
 frontend/dist/
 *.exe
 *.exe~
