@@ -57,7 +57,7 @@ func (a *App) listenToEvents() {
 					saveName := filepath.Base(event.Name)
 					savePath := event.Name
 
-					runtime.EventsEmit(a.ctx, "new-save-event", saveName)
+					runtime.EventsEmit(a.ctx, "watcher:detected", saveName)
 
 					go func(p, n string) {
 						time.Sleep(3 * time.Second) // Safety delay for game I/O
@@ -70,8 +70,10 @@ func (a *App) listenToEvents() {
 
 						if err := a.UploadToAzure(zipPath); err != nil {
 							log.Printf("[Uploader] Sync Failed: %v", err)
+							runtime.EventsEmit(a.ctx, "upload:error")
 						} else {
 							log.Printf("[Uploader] Sync Success: %s", n)
+							runtime.EventsEmit(a.ctx, "upload:success")
 						}
 					}(savePath, saveName)
 				}

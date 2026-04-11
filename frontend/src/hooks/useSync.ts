@@ -12,9 +12,11 @@ export const useSync = (campaign: string, setStatus: (s: string) => void) => {
     const [pullStatus, setPullStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
     const [isRefreshing, setIsRefreshing] = useState(false);
 
-    const checkStatus = useCallback(async () => {
-        if (!campaign) return;
-        setIsRefreshing(true); // On active le refreshing ici
+    const checkStatus = useCallback(async (overrideCampaign?: string) => {
+        const campaignId = overrideCampaign || campaign; // Utilise l'override si présent (démarrage), sinon l'état
+        if (!campaignId) return;
+        
+        setIsRefreshing(true);
         try {
             const local = await GetLocalSaveStatus();
             const cloud = await GetCloudSaveStatus();

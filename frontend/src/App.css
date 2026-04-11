@@ -55,6 +55,21 @@ html, body {
   text-transform: capitalize;
 }
 
+.badge.detected {
+    background-color: #f1c40f; /* Jaune */
+    color: #000;
+}
+
+.badge.success {
+    background-color: #00ffaa; /* Vert */
+    color: #000;
+}
+
+.badge.error {
+    background-color: #ff4444; /* Rouge */
+    color: #fff;
+}
+
 /* --- Main Layout --- */
 .main {
   flex: 1;

@@ -1,29 +1,69 @@
 import { useState, useEffect } from 'react';
 import { useWatcher } from './hooks/useWatcher';
-import { useSync } from './hooks/useSync'; // Import du nouveau hook
+import { useSync } from './hooks/useSync';
 import { SelectFolder, GetSettings, SaveSettings, OpenFolder } from "../wailsjs/go/main/App";
+import { EventsOn, EventsOff } from "../wailsjs/runtime/runtime";
 import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import './App.css';
 
+dayjs.extend(relativeTime);
+
 const App = () => {
-    const { path, setPath, lastSave, status, setStatus, info } = useWatcher();
+    const { path, setPath, status, setStatus, info } = useWatcher();
     const [uploader, setUploader] = useState("");
     const [campaign, setCampaign] = useState("");
     
-    // Utilisation du nouveau hook
+    // État local pour gérer la couleur/classe du badge (idle, detected, success, error)
+    const [badgeClass, setBadgeClass] = useState("");
+
     const { localDate, cloudData, lastCheck, pullStatus, isRefreshing, checkStatus, performPull } = useSync(campaign, setStatus);
 
     useEffect(() => {
-        GetSettings().then(cfg => {
+        const initApp = async () => {
+            const cfg = await GetSettings();
             setUploader(cfg.uploader || "");
             setCampaign(cfg.campaign || "");
-        });
-    }, []);
+            setPath(cfg.save_path || "");
 
-    // Trigger check on startup or when campaign changes
-    useEffect(() => {
-        if (campaign) checkStatus();
-    }, [campaign, checkStatus]);
+            if (cfg.campaign) {
+                checkStatus(cfg.campaign);
+            }
+        };
+
+        initApp();
+
+        // --- Écouteurs d'événements pour l'upload ---
+        EventsOn("watcher:detected", () => {
+            setStatus("New Save Detected : Uploading...");
+            setBadgeClass("detected");
+        });
+
+        EventsOn("upload:success", () => {
+            setStatus("Upload Successful");
+            setBadgeClass("success"); 
+            checkStatus();
+            setTimeout(() => {
+                setStatus("Watching");
+                setBadgeClass("");
+            }, 3000);
+        });
+
+        EventsOn("upload:error", () => {
+            setStatus("Upload Failed");
+            setBadgeClass("error");    // Devra être Rouge en CSS
+            setTimeout(() => {
+                setStatus("Watching");
+                setBadgeClass("");
+            }, 5000);
+        });
+
+        return () => {
+            EventsOff("watcher:detected");
+            EventsOff("upload:success");
+            EventsOff("upload:error");
+        };
+    }, [checkStatus, setStatus]);
 
     const handleSyncSettings = () => SaveSettings(path, uploader, campaign);
 
@@ -36,15 +76,15 @@ const App = () => {
     };
 
     const handleOpenFolder = () => {
-        if (path) {
-            OpenFolder(path);
-        }
+        if (path) OpenFolder(path);
     };
+
     return (
         <div className="container">
             <header className="header">
                 <h1 className="title">{info.name}</h1>
-                <div className="badge">{status}</div>
+                {/* On ajoute la badgeClass ici */}
+                <div className={`badge ${badgeClass}`}>{status}</div>
             </header>
 
             <main className="main">
@@ -100,7 +140,7 @@ const App = () => {
                     <div className="sync-actions">
                         <button 
                             className="btn-mini" 
-                            onClick={checkStatus} 
+                            onClick={() => checkStatus()}
                             disabled={isRefreshing || pullStatus === "loading"}
                         >
                             {isRefreshing ? "Refreshing..." : "Refresh Status"}
