@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useWatcher } from './hooks/useWatcher';
-import { SelectFolder, GetSettings, SaveSettings, DownloadLatestSave } from "../wailsjs/go/main/App";
+import { useSync } from './hooks/useSync'; // Import du nouveau hook
+import { SelectFolder, GetSettings, SaveSettings } from "../wailsjs/go/main/App";
+import dayjs from 'dayjs';
 import './App.css';
 
 const App = () => {
     const { path, setPath, lastSave, status, setStatus, info } = useWatcher();
     const [uploader, setUploader] = useState("");
     const [campaign, setCampaign] = useState("");
-    const [isDownloading, setIsDownloading] = useState(false); // État pour le bouton Pull
+    
+    // Utilisation du nouveau hook
+    const { localDate, cloudData, lastCheck, pullStatus, isRefreshing, checkStatus, performPull } = useSync(campaign, setStatus);
 
     useEffect(() => {
         GetSettings().then(cfg => {
@@ -16,43 +20,18 @@ const App = () => {
         });
     }, []);
 
-    const handleSyncSettings = () => {
-        SaveSettings(path, uploader, campaign);
-    };
+    // Trigger check on startup or when campaign changes
+    useEffect(() => {
+        if (campaign) checkStatus();
+    }, [campaign, checkStatus]);
+
+    const handleSyncSettings = () => SaveSettings(path, uploader, campaign);
 
     const handleBrowse = async () => {
         const selected = await SelectFolder();
         if (selected) {
             setPath(selected);
             setStatus("Watching");
-        }
-    };
-
-    const [pullStatus, setPullStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-
-    const handleCloudPull = async () => {
-        setPullStatus("loading");
-        setStatus("Downloading...");
-        
-        try {
-            const result = await DownloadLatestSave();
-            
-            if (result === "Success") {
-                setPullStatus("success");
-                setStatus("Watching");
-
-                // Le bouton revient à la normale après 3 secondes
-                setTimeout(() => {
-                    setPullStatus("idle");
-                }, 3000);
-            } else {
-                setPullStatus("error");
-                console.error(result);
-                setTimeout(() => setPullStatus("idle"), 5000);
-            }
-        } catch (err) {
-            setPullStatus("error");
-            setTimeout(() => setPullStatus("idle"), 5000);
         }
     };
 
@@ -64,40 +43,61 @@ const App = () => {
             </header>
 
             <main className="main">
-                {/* Section Configuration */}
                 <section className="card">
                     <h3 className="card-title">Configuration</h3>
                     <div className="input-group">
                         <label className="label">Uploader Name</label>
-                        <input 
-                            className="input-field"
-                            value={uploader}
-                            onChange={(e) => setUploader(e.target.value)}
-                            onBlur={handleSyncSettings}
-                            placeholder="e.g. Incurso"
-                        />
+                        <input className="input-field" value={uploader} onChange={(e) => setUploader(e.target.value)} onBlur={handleSyncSettings} />
                     </div>
                     <div className="input-group" style={{ marginTop: '12px' }}>
                         <label className="label">Campaign ID</label>
-                        <input 
-                            className="input-field"
-                            value={campaign}
-                            onChange={(e) => setCampaign(e.target.value)}
-                            onBlur={handleSyncSettings}
-                            placeholder="e.g. testcampaign"
-                        />
+                        <input className="input-field" value={campaign} onChange={(e) => setCampaign(e.target.value)} onBlur={handleSyncSettings} />
                     </div>
                 </section>
 
-                {/* Section Save Directory & Cloud Pull */}
                 <section className="card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                        <h3 className="card-title" style={{ margin: 0 }}>Save Directory</h3>
-                        {/* Nouveau bouton Cloud Pull */}
+                    <h3 className="card-title">Save Directory</h3>
+                    <div className="path-box">
+                        <code className="code-block">{path || "No folder selected"}</code>
+                        <button onClick={handleBrowse} className="btn-mini">Change</button>
+                    </div>
+                </section>
+                
+                <section className="card">
+                    <div className="card-header-flex">
+                        <h3 className="card-title">Cloud Synchronization</h3>
+                        <span className="last-check-text">
+                            {lastCheck ? `Updated ${lastCheck.fromNow()}` : "Not checked"}
+                        </span>
+                    </div>
+
+                    <div className="sync-grid">
+                        <div className="sync-item">
+                            <span className="sync-label">Local Save</span>
+                            <span className="sync-value">{localDate ? dayjs(localDate).format('DD MMM HH:mm') : "None"}</span>
+                        </div>
+                        <div className="sync-item">
+                            <span className="sync-label">Cloud Save</span>
+                            <span className="sync-value">
+                                {cloudData?.timestamp ? dayjs(cloudData.timestamp).format('DD MMM HH:mm') : "None"}
+                            </span>
+                            {cloudData?.uploader && <span className="sync-subvalue">by {cloudData.uploader}</span>}
+                        </div>
+                    </div>
+
+                    <div className="sync-actions">
                         <button 
-                            onClick={handleCloudPull} 
-                            disabled={pullStatus !== "idle" || !path}
-                            className={`btn-sync ${pullStatus}`}
+                            className="btn-mini" 
+                            onClick={checkStatus} 
+                            disabled={isRefreshing || pullStatus === "loading"}
+                        >
+                            {isRefreshing ? "Refreshing..." : "Refresh Status"}
+                        </button>
+                        
+                        <button 
+                            className={`btn-sync ${pullStatus}`} 
+                            onClick={performPull}
+                            disabled={pullStatus !== "idle" || isRefreshing || !path}
                         >
                             {pullStatus === "idle" && "Cloud Pull"}
                             {pullStatus === "loading" && "Pulling..."}
@@ -105,22 +105,7 @@ const App = () => {
                             {pullStatus === "error" && "✕ Failed"}
                         </button>
                     </div>
-                    
-                    <div className="path-box">
-                        <code className="code-block">{path || "No folder selected"}</code>
-                        <button onClick={handleBrowse} className="btn-mini">
-                            {path ? "Change" : "Browse"}
-                        </button>
-                    </div>
-                </section>
-
-                <section className="card">
-                    <h3 className="card-title">Status</h3>
-                    <div className="save-display">
-                        <span className="label">Latest synced:</span>
-                        <span className="file-name">{lastSave || "None"}</span>
-                    </div>
-                </section>
+                </section>               
             </main>
 
             <footer className="footer">

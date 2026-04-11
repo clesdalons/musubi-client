@@ -13,7 +13,7 @@ import (
 const (
 	AppTitle  = "Musubi"
 	MinWidth  = 450
-	MinHeight = 650
+	MinHeight = 740
 )
 
 //go:embed all:frontend/dist

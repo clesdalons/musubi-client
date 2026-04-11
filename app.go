@@ -2,7 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
+	"net/http"
+	"os"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -93,4 +97,43 @@ func (a *App) DownloadLatestSave() string {
 	}
 
 	return "Success"
+}
+
+// GetLocalSaveStatus returns the timestamp of the newest folder in the save path
+func (a *App) GetLocalSaveStatus() string {
+	cfg := a.LoadConfig()
+	files, err := os.ReadDir(cfg.SavePath)
+	if err != nil {
+		return ""
+	}
+
+	var newestTime time.Time
+	for _, f := range files {
+		if f.IsDir() {
+			info, _ := f.Info()
+			if info.ModTime().After(newestTime) {
+				newestTime = info.ModTime()
+			}
+		}
+	}
+	if newestTime.IsZero() {
+		return "Never"
+	}
+	return newestTime.Format(time.RFC3339)
+}
+
+// GetCloudSaveStatus calls your new GetLatestSaveInfo endpoint
+func (a *App) GetCloudSaveStatus() (map[string]interface{}, error) {
+	cfg := a.LoadConfig()
+	url := fmt.Sprintf("https://musubi.azurewebsites.net/api/GetLatestSaveInfo?campaignId=%s", cfg.Campaign)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var result map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&result)
+	return result, nil
 }
