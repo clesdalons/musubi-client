@@ -86,7 +86,8 @@ html, body {
 /* --- Sections Spacing (Aération sous les titres) --- */
 /* Ajoute de l'espace sous "Configuration" et "Save Directory" */
 .card .input-group:first-of-type,
-.card .path-box {
+.card .path-box,
+.card .sync-grid {
   margin-top: 12px;
 }
 
@@ -197,14 +198,7 @@ html, body {
   background-color: rgba(97, 218, 251, 0.1);
 }
 
-.sync-actions .btn-mini:disabled {
-    opacity: 0.7;
-    cursor: wait;
-    background-color: rgba(97, 218, 251, 0.05);
-    border-style: dashed; /* Petit effet visuel sympa pour dire "ça bosse" */
-}
-
-/* --- Save Directory (Mini Button restored) --- */
+/* --- Save Directory Section --- */
 .path-box {
   display: flex;
   flex-direction: column;
@@ -222,7 +216,15 @@ html, body {
   word-break: break-all;
 }
 
-/* Petit bouton "Change" indépendant */
+/* Conteneur pour Open et Change */
+.path-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 5px;
+}
+
+/* Petits boutons indépendants pour le répertoire */
 .path-box .btn-mini {
   background-color: transparent;
   color: var(--accent);
@@ -232,15 +234,19 @@ html, body {
   font-size: 0.65rem;
   font-weight: bold;
   cursor: pointer;
-  align-self: flex-end;
   width: auto;
   height: auto;
   transition: all 0.2s;
 }
 
-.path-box .btn-mini:hover {
+.path-box .btn-mini:hover:not(:disabled) {
   background-color: var(--accent);
   color: #000;
+}
+
+.path-box .btn-mini:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 /* --- Footer --- */

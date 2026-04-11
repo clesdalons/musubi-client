@@ -7,9 +7,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
+	"runtime"
 	"time"
 
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type AppInfo struct {
@@ -61,7 +63,7 @@ func (a *App) GetInitialPath() string {
 }
 
 func (a *App) SelectFolder() string {
-	folder, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
+	folder, err := wailsRuntime.OpenDirectoryDialog(a.ctx, wailsRuntime.OpenDialogOptions{
 		Title: "Select DOS2 Story Save Directory",
 	})
 	if err != nil || folder == "" {
@@ -136,4 +138,19 @@ func (a *App) GetCloudSaveStatus() (map[string]interface{}, error) {
 	var result map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&result)
 	return result, nil
+}
+
+func (a *App) OpenFolder(path string) {
+	var cmd *exec.Cmd
+
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("explorer", path)
+	case "darwin":
+		cmd = exec.Command("open", path)
+	default: // Linux
+		cmd = exec.Command("xdg-open", path)
+	}
+
+	cmd.Run()
 }

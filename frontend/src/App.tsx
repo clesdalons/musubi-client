@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useWatcher } from './hooks/useWatcher';
 import { useSync } from './hooks/useSync'; // Import du nouveau hook
-import { SelectFolder, GetSettings, SaveSettings } from "../wailsjs/go/main/App";
+import { SelectFolder, GetSettings, SaveSettings, OpenFolder } from "../wailsjs/go/main/App";
 import dayjs from 'dayjs';
 import './App.css';
 
@@ -35,6 +35,11 @@ const App = () => {
         }
     };
 
+    const handleOpenFolder = () => {
+        if (path) {
+            OpenFolder(path);
+        }
+    };
     return (
         <div className="container">
             <header className="header">
@@ -59,7 +64,14 @@ const App = () => {
                     <h3 className="card-title">Save Directory</h3>
                     <div className="path-box">
                         <code className="code-block">{path || "No folder selected"}</code>
-                        <button onClick={handleBrowse} className="btn-mini">Change</button>
+                        <div className="path-actions">
+                            <button onClick={handleOpenFolder} className="btn-mini" disabled={!path}>
+                                Open
+                            </button>
+                            <button onClick={handleBrowse} className="btn-mini">
+                                Change
+                            </button>
+                        </div>
                     </div>
                 </section>
                 
