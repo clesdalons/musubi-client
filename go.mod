@@ -1,4 +1,4 @@
-module musubi-client
+module github.com/musubi-client/musubi-client
 
 go 1.23.0
 

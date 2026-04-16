@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { GetLocalSaveStatus, GetCloudSaveStatus, DownloadLatestSave } from "../../wailsjs/go/main/App";
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { GetLocalSaveStatus, GetCloudSaveStatus, DownloadLatestSave } from "../../wailsjs/go/application/App";
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -12,11 +12,17 @@ export const useSync = (campaign: string, setStatus: (s: string) => void) => {
     const [pullStatus, setPullStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
     const [isRefreshing, setIsRefreshing] = useState(false);
 
+    const campaignRef = useRef(campaign);
+    useEffect(() => {
+        campaignRef.current = campaign;
+    }, [campaign]);
+
     const checkStatus = useCallback(async (overrideCampaign?: string) => {
-        const campaignId = overrideCampaign || campaign; // Utilise l'override si présent (démarrage), sinon l'état
+        const campaignId = overrideCampaign || campaignRef.current; // Utilise l'override si présent (démarrage), sinon l'état
         if (!campaignId) return;
         
         setIsRefreshing(true);
+        setCloudData(null);
         try {
             const local = await GetLocalSaveStatus();
             const cloud = await GetCloudSaveStatus();
@@ -25,10 +31,11 @@ export const useSync = (campaign: string, setStatus: (s: string) => void) => {
             setLastCheck(dayjs());
         } catch (e) {
             console.error("Sync check failed", e);
+            setLastCheck(dayjs());
         } finally {
             setIsRefreshing(false); // On désactive à la fin
         }
-    }, [campaign]);
+    }, []);
 
     const performPull = async () => {
         setPullStatus("loading");

@@ -1,19 +1,48 @@
 # README
 
-## About
+# Musubi Client
 
-This is the official Wails React-TS template.
+Musubi Client is a desktop synchronization tool for Divinity: Original Sin 2 save games. It watches the local
+`Story` save directory, uploads new save folders automatically to an Azure-backed API, and can fetch the latest
+cloud save on demand.
 
-You can configure the project by editing `wails.json`. More information about the project settings can be found
-here: https://wails.io/docs/reference/project-config
+## Architecture
 
-## Live Development
+- `main.go` — lightweight Wails bootstrap and frontend asset configuration.
+- `internal/application` — application service exposing Wails bindings and orchestrating watcher, sync, and config.
+- `internal/config` — persistent settings management and automatic DOS2 save path detection.
+- `internal/watcher` — filesystem watcher monitoring new save folders and emitting upload events.
+- `internal/cloud` — Azure API synchronization, including upload and cloud download.
+- `internal/storage` — ZIP packaging and extraction utilities.
+- `frontend` — React + Vite UI rendering the configuration and sync status.
 
-To run in live development mode, run `wails dev` in the project directory. This will run a Vite development
-server that will provide very fast hot reload of your frontend changes. If you want to develop in a browser
-and have access to your Go methods, there is also a dev server that runs on http://localhost:34115. Connect
-to this in your browser, and you can call your Go code from devtools.
+## Development
 
-## Building
+1. Start the frontend development server:
 
-To build a redistributable, production mode package, use `wails build`.
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+2. Start the Wails desktop application:
+
+```bash
+cd ..
+wails dev
+```
+
+## Build
+
+To compile the application for production:
+
+```bash
+wails build
+```
+
+## Notes
+
+- Uses a local JSON config file at `~/.musubi/config.json`.
+- Automatically detects common DOS2 save directories in `%USERPROFILE%\Documents` and OneDrive.
+- The app is now structured with clear internal packages for a portfolio-grade Go project.
