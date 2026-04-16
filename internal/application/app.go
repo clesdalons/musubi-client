@@ -13,6 +13,7 @@ import (
 
 	"github.com/musubi-client/musubi-client/internal/cloud"
 	"github.com/musubi-client/musubi-client/internal/config"
+	"github.com/musubi-client/musubi-client/internal/model"
 	"github.com/musubi-client/musubi-client/internal/storage"
 	"github.com/musubi-client/musubi-client/internal/watcher"
 )
@@ -22,11 +23,17 @@ type AppInfo struct {
 	Version string `json:"version"`
 }
 
+type CloudProvider interface {
+	GetLatestSaveInfo(campaign string) (map[string]interface{}, error)
+	DownloadLatestSave(campaign string) (*model.PullResponse, string, error)
+	UploadSave(zipPath string, cfg config.Config) error
+}
+
 type App struct {
 	ctx           context.Context
 	watcher       *watcher.Watcher
 	configManager *config.Manager
-	azureClient   *cloud.AzureClient
+	azureClient   CloudProvider
 }
 
 func New() *App {

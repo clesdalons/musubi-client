@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { GetLocalSaveStatus, GetCloudSaveStatus, DownloadLatestSave } from "../../wailsjs/go/application/App";
+import { appApi } from '../services/appApi';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -18,14 +18,14 @@ export const useSync = (campaign: string, setStatus: (s: string) => void) => {
     }, [campaign]);
 
     const checkStatus = useCallback(async (overrideCampaign?: string) => {
-        const campaignId = overrideCampaign || campaignRef.current; // Utilise l'override si présent (démarrage), sinon l'état
+        const campaignId = overrideCampaign || campaignRef.current; // Utilises override when provided, otherwise current campaign state
         if (!campaignId) return;
         
         setIsRefreshing(true);
         setCloudData(null);
         try {
-            const local = await GetLocalSaveStatus();
-            const cloud = await GetCloudSaveStatus();
+            const local = await appApi.getLocalSaveStatus();
+            const cloud = await appApi.getCloudSaveStatus();
             setLocalDate(local === "Never" ? null : local);
             setCloudData(cloud);
             setLastCheck(dayjs());
@@ -33,7 +33,7 @@ export const useSync = (campaign: string, setStatus: (s: string) => void) => {
             console.error("Sync check failed", e);
             setLastCheck(dayjs());
         } finally {
-            setIsRefreshing(false); // On désactive à la fin
+            setIsRefreshing(false); // On disable after completion
         }
     }, []);
 
@@ -41,7 +41,7 @@ export const useSync = (campaign: string, setStatus: (s: string) => void) => {
         setPullStatus("loading");
         setStatus("Downloading...");
         try {
-            const result = await DownloadLatestSave();
+            const result = await appApi.downloadLatestSave();
             if (result === "Success") {
                 setPullStatus("success");
                 setStatus("Watching");

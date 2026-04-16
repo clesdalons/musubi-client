@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useWatcher } from './hooks/useWatcher';
 import { useSync } from './hooks/useSync';
-import { SelectFolder, GetSettings, SaveSettings, OpenFolder } from '../wailsjs/go/application/App';
-import { EventsOn, EventsOff } from '../wailsjs/runtime/runtime';
+import { appApi } from './services/appApi';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import ConfigPanel from './components/ConfigPanel';
@@ -22,7 +21,7 @@ const App = () => {
 
     useEffect(() => {
         const initApp = async () => {
-            const cfg = await GetSettings();
+            const cfg = await appApi.getSettings();
             setUploader(cfg.uploader || '');
             setCampaign(cfg.campaign || '');
             setPath(cfg.save_path || '');
@@ -34,12 +33,12 @@ const App = () => {
 
         initApp();
 
-        EventsOn('watcher:detected', () => {
+        appApi.onEvent('watcher:detected', () => {
             setStatus('New save detected : Uploading...');
             setBadgeClass('detected');
         });
 
-        EventsOn('upload:success', () => {
+        appApi.onEvent('upload:success', () => {
             setStatus('Upload Successful');
             setBadgeClass('success');
             checkStatus();
@@ -49,7 +48,7 @@ const App = () => {
             }, 3000);
         });
 
-        EventsOn('upload:error', () => {
+        appApi.onEvent('upload:error', () => {
             setStatus('Upload Failed');
             setBadgeClass('error');
             setTimeout(() => {
@@ -59,18 +58,18 @@ const App = () => {
         });
 
         return () => {
-            EventsOff('watcher:detected');
-            EventsOff('upload:success');
-            EventsOff('upload:error');
+            appApi.offEvent('watcher:detected');
+            appApi.offEvent('upload:success');
+            appApi.offEvent('upload:error');
         };
     }, [checkStatus, setPath]);
 
     const handleSyncSettings = async () => {
-        await SaveSettings(path, uploader, campaign);
+        await appApi.saveSettings(path, uploader, campaign);
     };
 
     const handleBrowse = async () => {
-        const selected = await SelectFolder();
+        const selected = await appApi.selectFolder();
         if (selected) {
             setPath(selected);
             setStatus('Watching');
@@ -78,7 +77,7 @@ const App = () => {
     };
 
     const handleOpenFolder = () => {
-        if (path) OpenFolder(path);
+        if (path) appApi.openFolder(path);
     };
 
     return (
